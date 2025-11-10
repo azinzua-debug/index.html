@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfiles Artísticos</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 30px 0;
+      color: #ffcc00;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 2px solid #ffcc00;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 0 10px #000;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.03);
+    }
+
+    .rol {
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    .especialidades {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #ccc;
+    }
+
+    .descripcion {
+      margin-top: 10px;
+      font-style: italic;
+      color: #ddd;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎭 Perfiles Artísticos</h1>
+  <div class="container" id="perfiles"></div>
+  <div class="footer">Datos generados automáticamente desde cosnet_profiles.db</div>
+
+  <script>
+    async function cargarPerfiles() {
+      try {
+	const res = await fetch("http://216.173.77.190:25791/profiles");
+        const data = await res.json();
+        const contenedor = document.getElementById("perfiles");
+
+        if (data.length === 0) {
+          contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
+          return;
+        }
+
+        data.forEach(p => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <h2>${p.nombre || "Usuario sin nombre"}</h2>
+            <p class="rol">Rol: ${p.rol || "Sin rol"}</p>
+            <p>Proyectos: ${p.proyectos || "N/A"}</p>
+            <p>Redes: ${p.redes || "N/A"}</p>
+            <p class="especialidades">Especialidades: ${(p.especialidades || []).join(", ")}</p>
+            <p class="descripcion">${p.descripcion || "Sin descripción"}</p>
+            <p>Cosplays: ${p.cosplays || "N/A"}</p>
+          `;
+          contenedor.appendChild(card);
+        });
+      } catch (e) {
+        console.error("Error al cargar perfiles:", e);
+        document.getElementById("perfiles").innerHTML = "<p>Error al cargar perfiles.</p>";
+      }
+    }
+
+    cargarPerfiles();
+  </script>
+</body>
+</html>
