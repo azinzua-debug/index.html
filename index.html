@@ -1,5 +1,5 @@
 <script>
-const API_URL = "/api/proxy";
+const API_URL = "/api/proxy"; // ✅ No pongas la IP directa aquí
 
 async function cargarPerfiles() {
   const contenedor = document.getElementById("perfiles");
@@ -7,28 +7,16 @@ async function cargarPerfiles() {
     const res = await fetch(API_URL);
     const perfiles = await res.json();
 
-    if (perfiles.length === 0) {
-      contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
-      return;
-    }
-
     contenedor.innerHTML = perfiles.map(p => `
-      <div class="perfil">
+      <div>
         <h2>${p.nombre}</h2>
-        <p><b>Rol:</b> ${p.rol}</p>
-        <p><b>Descripción:</b> ${p.descripcion}</p>
-        <p><b>Especialidades:</b> ${p.especialidades}</p>
-        <p><b>Redes:</b> ${p.redes}</p>
-        <p><b>Proyectos:</b> ${p.proyectos}</p>
-        <p><b>Cosplays:</b> ${p.cosplays}</p>
+        <p>${p.descripcion}</p>
       </div>
     `).join("");
   } catch (err) {
-    console.error(err);
+    console.error("Error al cargar:", err);
     contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
   }
 }
-
 cargarPerfiles();
 </script>
-
