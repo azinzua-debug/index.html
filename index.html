@@ -1,22 +1,77 @@
-<script>
-const API_URL = "/api/proxy"; // ✅ No pongas la IP directa aquí
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎭 Perfiles Artísticos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ffcc00;
+    }
+    #perfiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .perfil {
+      background-color: #222;
+      border: 2px solid #ffcc00;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+    }
+    .perfil h2 {
+      margin-top: 0;
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎭 Perfiles Artísticos</h1>
+  <div id="perfiles">Cargando perfiles...</div>
 
-async function cargarPerfiles() {
-  const contenedor = document.getElementById("perfiles");
-  try {
-    const res = await fetch(API_URL);
-    const perfiles = await res.json();
+  <script>
+  const API_URL = "/api/proxy"; // ✅ usa el proxy de vercel
 
-    contenedor.innerHTML = perfiles.map(p => `
-      <div>
-        <h2>${p.nombre}</h2>
-        <p>${p.descripcion}</p>
-      </div>
-    `).join("");
-  } catch (err) {
-    console.error("Error al cargar:", err);
-    contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
+  async function cargarPerfiles() {
+    const contenedor = document.getElementById("perfiles");
+
+    try {
+      const res = await fetch(API_URL);
+      const perfiles = await res.json();
+
+      if (!Array.isArray(perfiles) || perfiles.length === 0) {
+        contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
+        return;
+      }
+
+      contenedor.innerHTML = perfiles.map(p => `
+        <div class="perfil">
+          <h2>${p.nombre}</h2>
+          <p><b>Rol:</b> ${p.rol}</p>
+          <p><b>Descripción:</b> ${p.descripcion}</p>
+          <p><b>Especialidades:</b> ${Array.isArray(p.especialidades) ? p.especialidades.join(', ') : p.especialidades}</p>
+          <p><b>Redes:</b> ${p.redes}</p>
+          <p><b>Proyectos:</b> ${p.proyectos}</p>
+          <p><b>Cosplays:</b> ${p.cosplays}</p>
+        </div>
+      `).join("");
+    } catch (err) {
+      console.error("❌ Error al cargar perfiles:", err);
+      contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
+    }
   }
-}
-cargarPerfiles();
-</script>
+
+  cargarPerfiles();
+  </script>
+</body>
+</html>
