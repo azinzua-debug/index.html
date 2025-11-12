@@ -1,30 +1,24 @@
 export default async function handler(req, res) {
   try {
-    // Llamar a ambos endpoints del servidor base
-    const [profilesRes, portafolioRes] = await Promise.all([
-      fetch("http://216.173.77.190:25791/profiles"),
-      fetch("http://216.173.77.190:25791/portafolio")
-    ]);
+    const { tipo } = req.query; // tipo = 'profiles' o 'portafolio'
+    let url;
 
-    // Verificar que ambos respondan correctamente
-    if (!profilesRes.ok || !portafolioRes.ok) {
-      throw new Error("Error en una o ambas respuestas del servidor base");
+    if (tipo === "profiles") {
+      url = "http://216.173.77.190:25791/profiles";
+    } else if (tipo === "portafolio") {
+      url = "http://216.173.77.190:25791/portafolio";
+    } else {
+      return res.status(400).json({ error: "Tipo no especificado" });
     }
 
-    const profilesData = await profilesRes.json();
-    const portafolioData = await portafolioRes.json();
+    const response = await fetch(url);
+    const data = await response.json();
 
-    // Permitir acceso desde cualquier origen
     res.setHeader("Access-Control-Allow-Origin", "*");
-
-    // Combinar ambos en un solo objeto
-    res.status(200).json({
-      perfiles: profilesData,
-      portafolio: portafolioData
-    });
+    res.status(200).json(data);
 
   } catch (err) {
-    console.error("❌ Error en el proxy combinado:", err);
+    console.error(err);
     res.status(500).json({ error: "No se pudo conectar al servidor base" });
   }
 }
