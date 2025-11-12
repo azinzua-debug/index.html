@@ -25,57 +25,15 @@
       border-radius: 20px;
       box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
       width: 90%;
-      max-width: 500px;
+      max-width: 600px;
       margin: 50px auto;
-      padding: 20px;
+      padding: 25px;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .card:hover {
       transform: scale(1.03);
       box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
-    }
-
-    .card img {
-      width: 150px;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 50%;
-      border: 3px solid #ffcc00;
-      margin-bottom: 15px;
-    }
-
-    .portafolio {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .port-item {
-      background: #1a1a1a;
-      border: 1px solid #ffcc00;
-      border-radius: 15px;
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .port-item:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
-    }
-
-    .port-item img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-bottom: 2px solid #ffcc00;
-    }
-
-    .port-item p {
-      padding: 10px;
-      margin: 0;
-      color: #fff;
     }
 
     .volver {
@@ -91,6 +49,59 @@
     }
 
     .volver:hover {
+      background: #ffcc00;
+      color: #000;
+    }
+
+    /* === Carrusel === */
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      max-width: 550px;
+      height: 300px;
+      margin: 25px auto;
+      overflow: hidden;
+      border: 2px solid #ffcc00;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+    }
+
+    .carousel {
+      display: flex;
+      transition: transform 0.6s ease-in-out;
+      width: 100%;
+      height: 100%;
+    }
+
+    .carousel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .carousel-controls {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .carousel-btn {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid #ffcc00;
+      color: #ffcc00;
+      font-size: 1.4rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      pointer-events: all;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .carousel-btn:hover {
       background: #ffcc00;
       color: #000;
     }
@@ -130,37 +141,64 @@
         // Filtrar el portafolio del usuario
         const portafolio = data.portafolio.filter(p => String(p.user_id) === String(id));
 
-        // Mostrar el perfil
         contenedor.innerHTML = `
           <div class="card">
             <h2>${perfil.username || perfil.nombre || "Usuario sin nombre"}</h2>
-            <img src="${perfil.avatar || 'https://via.placeholder.com/150'}" alt="${perfil.username || 'usuario'}" />
             <p><b>Rol:</b> ${perfil.rol || "Artista"}</p>
             <p><b>Descripción:</b> ${perfil.descripcion || "Sin descripción."}</p>
             <p><b>Cosplays:</b> ${perfil.cosplays || "No especificado"}</p>
             <p><b>Proyectos:</b> ${perfil.proyectos || "Ninguno"}</p>
 
-            <h3>Portafolio</h3>
-            <div class="portafolio">
-              ${
-                portafolio.length > 0
-                  ? portafolio.map(p => `
-                    <div class="port-item">
-                      <img src="${p.imagen_url}" alt="${p.personaje}" />
-                      <p>${p.personaje}</p>
+            <h3>Galería</h3>
+
+            ${
+              portafolio.length > 0
+                ? `
+                  <div class="carousel-container">
+                    <div class="carousel" id="carousel">
+                      ${portafolio.map(p => `
+                        <img src="${p.imagen_url}" alt="${p.personaje}" />
+                      `).join("")}
                     </div>
-                  `).join("")
-                  : "<p>Sin obras publicadas.</p>"
-              }
-            </div>
+                    <div class="carousel-controls">
+                      <button class="carousel-btn" id="prev">⟨</button>
+                      <button class="carousel-btn" id="next">⟩</button>
+                    </div>
+                  </div>
+                `
+                : "<p>Sin obras publicadas.</p>"
+            }
 
             <a class="volver" href="index.html">← Volver</a>
           </div>
         `;
+
+        if (portafolio.length > 0) iniciarCarrusel();
       } catch (err) {
         console.error("❌ Error cargando perfil:", err);
         contenedor.innerHTML = "<p>⚠ Error al cargar el perfil o el portafolio.</p>";
       }
+    }
+
+    function iniciarCarrusel() {
+      const carousel = document.getElementById("carousel");
+      const slides = carousel.querySelectorAll("img");
+      const total = slides.length;
+      let index = 0;
+
+      const prev = document.getElementById("prev");
+      const next = document.getElementById("next");
+
+      function showSlide(i) {
+        index = (i + total) % total;
+        carousel.style.transform = `translateX(-${index * 100}%)`;
+      }
+
+      prev.addEventListener("click", () => showSlide(index - 1));
+      next.addEventListener("click", () => showSlide(index + 1));
+
+      // Movimiento automático cada 4s
+      setInterval(() => showSlide(index + 1), 4000);
     }
   </script>
 </body>
