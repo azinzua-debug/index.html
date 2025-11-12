@@ -3,130 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil - CosNet UY</title>
+  <title>Perfil Artístico</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    main {
-      max-width: 900px;
+    body {
+      background-color: #0d0d0d;
+      color: #f8f8f8;
+      font-family: "Poppins", sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .perfil-container {
+      max-width: 700px;
       margin: 0 auto;
-      padding: 2rem;
-      text-align: left;
+      background: rgba(30, 30, 30, 0.9);
+      border: 2px solid #ffcc00;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+      padding: 30px;
+      transition: transform 0.3s;
     }
 
-    .perfil-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
+    .perfil-container:hover {
+      transform: scale(1.02);
     }
 
-    .perfil-header img {
-      width: 150px;
-      height: 150px;
-      border-radius: 12px;
+    .perfil-imagen {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 3px solid #ffcc00;
       object-fit: cover;
-      border: 3px solid #6c8cff;
+      margin-bottom: 20px;
     }
 
-    .perfil-datos h2 {
-      color: #6c8cff;
-      margin: 0;
+    h1 {
+      color: #ffcc00;
+      font-size: 2rem;
+      margin-bottom: 5px;
     }
 
-    .galeria {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+    h2 {
+      color: #aaa;
+      font-weight: 400;
+      margin-bottom: 20px;
+    }
+
+    p {
+      line-height: 1.6;
+      font-size: 1.1em;
+      color: #ddd;
+      margin: 10px 0;
+    }
+
+    .redes a {
+      margin: 0 10px;
+      color: #ffcc00;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .redes a:hover {
+      color: #fff;
+    }
+
+    .habilidades {
       margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
     }
 
-    .galeria img {
-      width: 180px;
-      height: 180px;
-      object-fit: cover;
+    .habilidad {
+      background: #1a1a1a;
+      border: 1px solid #ffcc00;
+      padding: 8px 14px;
       border-radius: 10px;
-      border: 2px solid #6c8cff;
+      color: #ffcc00;
+      font-size: 0.95em;
+      transition: all 0.3s;
+    }
+
+    .habilidad:hover {
+      background: #ffcc00;
+      color: #0d0d0d;
+    }
+
+    #error {
+      color: #ff4444;
+      font-size: 1.2em;
+      margin-top: 20px;
     }
 
     .volver {
       display: inline-block;
-      margin-top: 2rem;
-      color: #6c8cff;
+      margin-top: 25px;
+      background: #ffcc00;
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 10px;
       text-decoration: none;
-      font-weight: bold;
+      transition: background 0.3s;
     }
 
     .volver:hover {
-      text-decoration: underline;
+      background: #fff;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>CosNet UY</h1>
-    <nav>
-      <a href="index.html">Perfiles</a>
-    </nav>
-  </header>
-
-  <main>
-    <div id="perfil">
-      <p>Cargando perfil...</p>
-    </div>
-  </main>
-
-  <footer>
-    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
-  </footer>
+  <div class="perfil-container" id="perfil"></div>
+  <a href="index.html" class="volver">⬅ Volver</a>
 
   <script>
-    const API_PERFILES = "/api/proxy";
-    const API_PORTAFOLIO = "/api/portafolio";
-    const id = new URLSearchParams(window.location.search).get("id");
-
     async function cargarPerfil() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
       const contenedor = document.getElementById("perfil");
 
-      try {
-        const res = await fetch(API_PERFILES);
-        const perfiles = await res.json();
-        const perfil = perfiles.find(p => String(p.id) === String(id));
+      if (!id) {
+        contenedor.innerHTML = "<p id='error'>❌ Perfil no encontrado.</p>";
+        return;
+      }
 
-        if (!perfil) {
-          contenedor.innerHTML = "<p>Perfil no encontrado.</p>";
-          return;
-        }
+      try {
+        const res = await fetch(`https://perfiles-artisticos.onrender.com/api/perfiles/${id}`);
+        if (!res.ok) throw new Error("Perfil no encontrado");
+        const perfil = await res.json();
 
         contenedor.innerHTML = `
-          <div class="perfil-header">
-            <img src="${perfil.banner || 'https://i.imgur.com/HTF5eQe.png'}" alt="${perfil.nombre}">
-            <div class="perfil-datos">
-              <h2>${perfil.nombre}</h2>
-              <p><b>Rol:</b> ${perfil.rol || "N/A"}</p>
-              <p>${perfil.descripcion || "Sin descripción"}</p>
-              <p><b>Especialidades:</b> ${Array.isArray(perfil.especialidades) ? perfil.especialidades.join(', ') : perfil.especialidades}</p>
-              <p><b>Redes:</b> ${perfil.redes || "No especificadas"}</p>
-            </div>
+          <img src="${perfil.imagen || 'https://via.placeholder.com/150'}" alt="${perfil.nombre}" class="perfil-imagen">
+          <h1>${perfil.nombre}</h1>
+          <h2>${perfil.rol || 'Artista'}</h2>
+          <p>${perfil.biografia || 'Sin biografía disponible.'}</p>
+          
+          <div class="habilidades">
+            ${(perfil.habilidades && perfil.habilidades.length > 0)
+              ? perfil.habilidades.map(h => `<div class="habilidad">${h}</div>`).join('')
+              : '<p>Sin habilidades registradas.</p>'}
           </div>
-          <h3 style="color:#6c8cff;">📸 Portafolio</h3>
-          <div id="galeria" class="galeria"><p>Cargando...</p></div>
-          <a href="index.html" class="volver">⬅ Volver a la lista</a>
+
+          <div class="redes">
+            ${perfil.instagram ? `<a href="${perfil.instagram}" target="_blank">Instagram</a>` : ""}
+            ${perfil.twitter ? `<a href="${perfil.twitter}" target="_blank">Twitter</a>` : ""}
+            ${perfil.tiktok ? `<a href="${perfil.tiktok}" target="_blank">TikTok</a>` : ""}
+          </div>
         `;
-
-        // cargar imágenes del portafolio
-        const resPort = await fetch(API_PORTAFOLIO);
-        const portafolio = await resPort.json();
-        const imgs = portafolio.filter(i => String(i.user_id) === String(id));
-
-        const galeria = document.getElementById("galeria");
-        galeria.innerHTML = imgs.length
-          ? imgs.map(i => `<img src="${i.url}" alt="Cosplay">`).join("")
-          : "<p>Sin imágenes disponibles.</p>";
-
-      } catch (err) {
-        console.error(err);
-        contenedor.innerHTML = "<p style='color:red;'>Error al cargar el perfil.</p>";
+      } catch (error) {
+        contenedor.innerHTML = `<p id='error'>❌ Perfil no encontrado o error al cargar.</p>`;
       }
     }
 
