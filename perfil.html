@@ -1,151 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil - CosNet UY</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    main {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem;
-      text-align: left;
-    }
-
-    .perfil-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .perfil-header img {
-      width: 150px;
-      height: 150px;
-      border-radius: 12px;
-      object-fit: cover;
-      border: 3px solid #6c8cff;
-    }
-
-    .perfil-datos h2 {
-      color: #6c8cff;
-      margin: 0;
-    }
-
-    .galeria {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .galeria img {
-      width: 180px;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 10px;
-      border: 2px solid #6c8cff;
-    }
-
-    .volver {
-      display: inline-block;
-      margin-top: 2rem;
-      color: #6c8cff;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .volver:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil de Usuario</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>CosNet UY</h1>
-    <nav>
-      <a href="index.html">Perfiles</a>
-    </nav>
-  </header>
-
-  <main>
-    <div id="perfil">
-      <p>Cargando perfil...</p>
-    </div>
-  </main>
-
-  <footer>
-    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
-  </footer>
-
+  <div id="perfil-container" class="perfil"></div>
   <script>
-    const API_PERFILES = "/api/proxy";
-    const API_PORTAFOLIO = "/api/portafolio";
-    const id = new URLSearchParams(window.location.search).get("id");
+    const API_COMBINADO = "/api/proxy"; // Tu proxy local
 
-    async function cargarPerfil() {
-      const contenedor = document.getElementById("perfil");
+    // Obtener el ID del usuario desde la URL (?id=...)
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-      if (!id) {
-        contenedor.innerHTML = "<p style='color:orange;'>⚠ Falta el parámetro 'id' en la URL.</p>";
-        return;
-      }
+    if (!id) {
+      document.getElementById("perfil-container").innerHTML = "<p>⚠ No se proporcionó un ID válido.</p>";
+    } else {
+      cargarPerfil(id);
+    }
+
+    async function cargarPerfil(id) {
+      const contenedor = document.getElementById("perfil-container");
 
       try {
-        // --- Cargar perfiles ---
-        const resPerfiles = await fetch(API_PERFILES);
-        if (!resPerfiles.ok) throw new Error("Error al cargar perfiles");
-        const perfiles = await resPerfiles.json();
+        const res = await fetch(API_COMBINADO);
+        if (!res.ok) throw new Error("Error al conectar con el proxy");
+        const data = await res.json();
 
-        // Buscar el perfil por user_id o id
-        const perfil = perfiles.find(p => String(p.user_id || p.id) === String(id));
-
+        const perfil = data.perfiles.find(p => String(p.id) === String(id));
         if (!perfil) {
-          contenedor.innerHTML = "<p style='color:orange;'>⚠ Perfil no encontrado.</p>";
+          contenedor.innerHTML = "<p>⚠ Perfil no encontrado.</p>";
           return;
         }
 
-        // Render del perfil
+        const portafolio = data.portafolio.filter(p => String(p.user_id) === String(id));
+
         contenedor.innerHTML = `
-          <div class="perfil-header">
-            <img src="${perfil.banner || 'https://i.imgur.com/HTF5eQe.png'}" alt="${perfil.nombre || 'Usuario'}">
-            <div class="perfil-datos">
-              <h2>${perfil.nombre || 'Usuario sin nombre'}</h2>
-              <p><b>Rol:</b> ${perfil.rol || "N/A"}</p>
-              <p>${perfil.descripcion || "Sin descripción"}</p>
-              <p><b>Especialidades:</b> ${Array.isArray(perfil.especialidades) ? perfil.especialidades.join(', ') : (perfil.especialidades || "No especificadas")}</p>
-              <p><b>Redes:</b> ${perfil.redes || "No especificadas"}</p>
+          <div class="card">
+            <h2>${perfil.username || "Usuario sin nombre"}</h2>
+            <img src="${perfil.avatar || 'https://via.placeholder.com/150'}" alt="${perfil.username}" />
+            <p><b>Rol:</b> ${perfil.rol || "Artista"}</p>
+            <p><b>Bio:</b> ${perfil.descripcion || "Sin descripción."}</p>
+
+            <h3>Portafolio</h3>
+            <div class="portafolio">
+              ${portafolio.length > 0
+                ? portafolio.map(p => `
+                  <div class="port-item">
+                    <img src="${p.imagen_url}" alt="${p.personaje}" />
+                    <p>${p.personaje}</p>
+                  </div>
+                `).join("")
+                : "<p>Sin obras publicadas.</p>"
+              }
             </div>
           </div>
-
-          <h3 style="color:#6c8cff;">📸 Portafolio</h3>
-          <div id="galeria" class="galeria"><p>Cargando imágenes...</p></div>
-
-          <a href="index.html" class="volver">⬅ Volver a la lista</a>
         `;
-
-        // --- Cargar imágenes del portafolio ---
-        const resPort = await fetch(API_PORTAFOLIO);
-        if (!resPort.ok) throw new Error("Error al cargar portafolio");
-        const portafolio = await resPort.json();
-
-        // Filtrar imágenes de este usuario
-        const imgs = portafolio.filter(img => String(img.user_id) === String(id));
-
-        const galeria = document.getElementById("galeria");
-        galeria.innerHTML = imgs.length
-          ? imgs.map(i => `<img src="${i.imagen_url}" alt="${i.personaje || 'Cosplay'}">`).join("")
-          : "<p>No hay imágenes disponibles para este usuario.</p>";
-
       } catch (err) {
-        console.error(err);
-        contenedor.innerHTML = "<p style='color:red;'>Error al cargar el perfil o el portafolio.</p>";
+        console.error("❌ Error cargando perfil:", err);
+        contenedor.innerHTML = "<p>⚠ Error al cargar el perfil o el portafolio.</p>";
       }
     }
-
-    cargarPerfil();
   </script>
 </body>
 </html>
