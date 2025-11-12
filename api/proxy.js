@@ -1,12 +1,19 @@
 export default async function handler(req, res) {
   const { url } = req;
 
-  // Determinar si se está solicitando perfiles o portafolio
+  // Detectar si es un perfil, un portafolio o ambos con parámetros
   let targetUrl = "";
 
-  if (url.includes("/portafolio")) {
-    targetUrl = "http://216.173.77.190:25791/portafolio";
+  if (url.startsWith("/api/proxy/portafolio")) {
+    // Ejemplo: /api/proxy/portafolio/fuegito
+    const path = url.replace("/api/proxy", "");
+    targetUrl = `http://216.173.77.190:25791${path}`;
+  } else if (url.startsWith("/api/proxy/profiles")) {
+    // Ejemplo: /api/proxy/profiles/fuegito
+    const path = url.replace("/api/proxy", "");
+    targetUrl = `http://216.173.77.190:25791${path}`;
   } else {
+    // Por defecto carga la lista general
     targetUrl = "http://216.173.77.190:25791/profiles";
   }
 
