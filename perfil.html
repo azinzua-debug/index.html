@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil - CosNet</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="perfil"></div>
+
+  <script>
+    const API_URL = "/api/proxy.js";
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    async function cargarPerfil() {
+      const contenedor = document.getElementById("perfil");
+      try {
+        const res = await fetch(API_URL);
+        const perfiles = await res.json();
+        const perfil = perfiles.find(p => p.id == id);
+
+        if (!perfil) {
+          contenedor.innerHTML = "<p>Perfil no encontrado.</p>";
+          return;
+        }
+
+        contenedor.innerHTML = `
+          <div class="perfil">
+            <h2>${perfil.nombre}</h2>
+            <p><b>Rol:</b> ${perfil.rol}</p>
+            <p><b>Descripción:</b> ${perfil.descripcion}</p>
+            <p><b>Especialidades:</b> ${perfil.especialidades}</p>
+            <p><b>Redes:</b> ${perfil.redes}</p>
+            <h3>📸 Portafolio</h3>
+            <div id="imagenes"></div>
+            <button onclick="window.history.back()">⬅ Volver</button>
+          </div>
+        `;
+
+        // 🔹 Cargar imágenes desde API del portafolio
+        const resPort = await fetch("/api/portafolio.js");
+        const portafolio = await resPort.json();
+        const imagenes = portafolio.filter(img => img.user_id == id);
+
+        const imgDiv = document.getElementById("imagenes");
+        imgDiv.innerHTML = imagenes.length > 0
+          ? imagenes.map(i => `<img src="${i.url}" alt="Proyecto">`).join("")
+          : "<p>Sin imágenes disponibles.</p>";
+
+      } catch (err) {
+        console.error("❌ Error:", err);
+        contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfil.</p>";
+      }
+    }
+
+    cargarPerfil();
+  </script>
+</body>
+</html>
