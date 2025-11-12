@@ -3,108 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="favicom_cosnet.png" rel="icon" type="image/x-icon">
-  <title>CosNet UY</title>
+  <title>CosNet UY - Perfiles</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>🎭 Descubre Cosplayers de Uruguay</h1>
+  <header>
+    <h1>CosNet UY</h1>
+    <nav>
+      <a href="#">Perfiles</a>
+    </nav>
+  </header>
 
-  <div id="filtros">
-    <select id="filtroEspecialidad">
-      <option value="todas">Todas las Especialidades</option>
-      <option value="armaduras">Armaduras</option>
-      <option value="props">Props</option>
-      <option value="pelucas">Pelucas</option>
-      <option value="costura">Costura</option>
-      <option value="maquillaje">Maquillaje</option>
-    </select>
+  <main class="container">
+    <h2>Descubre Cosplayers de Uruguay</h2>
+    <p>Busca, filtra y conecta con cosplayers de todo el país.</p>
 
-    <select id="filtroRol">
-      <option value="todos">Todos los Roles</option>
-      <option value="Aprendiz">Aprendiz</option>
-      <option value="Mentor">Mentor</option>
-      <option value="Ambos">Ambos</option>
-    </select>
-  </div>
+    <div class="filtros">
+      <input type="text" id="busqueda" placeholder="Buscar por nombre o especialidad...">
 
-  <div id="perfiles"></div>
+      <select id="categoria">
+        <option value="">Todas las Especialidades</option>
+        <option value="armaduras">Armaduras</option>
+        <option value="props">Props</option>
+        <option value="maquillaje">Maquillaje</option>
+        <option value="pelucas">Pelucas</option>
+        <option value="costura">Costura</option>
+      </select>
+
+      <select id="rol">
+        <option value="">Todos los Roles</option>
+        <option value="aprendiz">Aprendiz</option>
+        <option value="mentor">Mentor</option>
+        <option value="ambos">Ambos</option>
+      </select>
+    </div>
+
+    <div id="perfiles" class="grid">
+      <p style="text-align:center;">Cargando perfiles...</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
+  </footer>
 
   <script>
-    const API_URL = "/api/proxy"; // Cambia a tu API
-    const contenedor = document.getElementById("perfiles");
-    const filtroEspecialidad = document.getElementById("filtroEspecialidad");
-    const filtroRol = document.getElementById("filtroRol");
+    const API_URL = "/api/proxy";
 
-    let perfiles = [];
+    const startColor = [255, 60, 60];   // rojo (#ff3c3c)
+    const endColor   = [155, 80, 255];  // morado (#9b50ff)
 
-    // --- Función de color intermedio entre dos hex ---
-    function colorIntermedio(hex1, hex2, factor) {
-      const c1 = parseInt(hex1.slice(1), 16);
-      const c2 = parseInt(hex2.slice(1), 16);
-      const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
-      const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
-      const r = Math.round(r1 + factor * (r2 - r1));
-      const g = Math.round(g1 + factor * (g2 - g1));
-      const b = Math.round(b1 + factor * (b2 - b1));
-      return `rgb(${r}, ${g}, ${b})`;
-    }
+    let perfilesData = [];
 
     async function cargarPerfiles() {
+      const contenedor = document.getElementById("perfiles");
       try {
         const res = await fetch(API_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        perfiles = await res.json();
-        renderizarPerfiles();
-      } catch (err) {
-        console.error("❌ Error al cargar perfiles:", err);
+        perfilesData = await res.json();
+        mostrarPerfiles(perfilesData);
+      } catch (e) {
         contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
       }
     }
 
-    function renderizarPerfiles() {
-      const especialidad = filtroEspecialidad.value.toLowerCase();
-      const rol = filtroRol.value.toLowerCase();
+    function mostrarPerfiles(perfiles) {
+      const contenedor = document.getElementById("perfiles");
+      contenedor.innerHTML = "";
 
-      let filtrados = perfiles.filter(p => {
-        const coincideRol = rol === "todos" || (p.rol && p.rol.toLowerCase() === rol);
-        const coincideEsp = especialidad === "todas" ||
-          (Array.isArray(p.especialidades) &&
-           p.especialidades.some(e => e.toLowerCase().includes(especialidad)));
-        return coincideRol && coincideEsp;
-      });
-
-      if (filtrados.length === 0) {
-        contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
+      if (perfiles.length === 0) {
+        contenedor.innerHTML = "<p>No se encontraron resultados.</p>";
         return;
       }
 
-      const colorInicio = "#ff0044"; // rojo
-      const colorFin = "#8f00ff"; // violeta
+      perfiles.forEach((p, i) => {
+        const total = perfiles.length;
+        const t = total > 1 ? i / (total - 1) : 0;
+        const r = Math.round(startColor[0] + t * (endColor[0] - startColor[0]));
+        const g = Math.round(startColor[1] + t * (endColor[1] - startColor[1]));
+        const b = Math.round(startColor[2] + t * (endColor[2] - startColor[2]));
+        const color = `rgb(${r},${g},${b})`;
 
-      contenedor.innerHTML = filtrados.map((p, i) => {
-        const factor = filtrados.length === 1 ? 0 : i / (filtrados.length - 1);
-        const color = colorIntermedio(colorInicio, colorFin, factor);
-        return `
-          <div class="perfil" style="border-color:${color}; box-shadow:0 0 10px ${color};">
-            <h2>${p.nombre || "Sin nombre"}</h2>
-            <p><b>Rol:</b> ${p.rol || "N/A"}</p>
-            <p><b>Descripción:</b> ${p.descripcion || "Sin descripción"}</p>
-            <p><b>Especialidades:</b> ${Array.isArray(p.especialidades) ? p.especialidades.join(", ") : (p.especialidades || "N/A")}</p>
-            <p><b>Redes:</b> ${p.redes || "No especificadas"}</p>
-            <p><b>Proyectos:</b> ${p.proyectos || "No especificados"}</p>
-            <p><b>Cosplays:</b> ${p.cosplays || "No especificados"}</p>
-          </div>
+        const especialidades = Array.isArray(p.especialidades)
+          ? p.especialidades.map(e => `<span>${e}</span>`).join("")
+          : `<span>${p.especialidades || ""}</span>`;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.borderTop = `3px solid ${color}`;
+        card.innerHTML = `
+          <h3 style="color:${color}">${p.nombre || "Sin nombre"}</h3>
+          <p><b>Rol:</b> ${p.rol || "N/A"}</p>
+          <p>${p.descripcion || "Sin descripción"}</p>
+          <div class="tags">${especialidades}</div>
+          <a href="#" class="btn">Ver Perfil</a>
         `;
-      }).join("");
+        contenedor.appendChild(card);
+      });
     }
 
-    filtroEspecialidad.addEventListener("change", renderizarPerfiles);
-    filtroRol.addEventListener("change", renderizarPerfiles);
+    function filtrar() {
+      const texto = document.getElementById("busqueda").value.toLowerCase();
+      const categoria = document.getElementById("categoria").value.toLowerCase();
+      const rol = document.getElementById("rol").value.toLowerCase();
+
+      const filtrados = perfilesData.filter(p => {
+        const matchNombre = p.nombre?.toLowerCase().includes(texto);
+        const matchDescripcion = p.descripcion?.toLowerCase().includes(texto);
+        const matchEspecialidad = Array.isArray(p.especialidades)
+          ? p.especialidades.some(e => e.toLowerCase().includes(texto))
+          : p.especialidades?.toLowerCase().includes(texto);
+
+        const matchCategoria = categoria
+          ? Array.isArray(p.especialidades)
+            ? p.especialidades.some(e => e.toLowerCase().includes(categoria))
+            : p.especialidades?.toLowerCase().includes(categoria)
+          : true;
+
+        const matchRol = rol ? (p.rol?.toLowerCase() === rol) : true;
+
+        return (matchNombre || matchDescripcion || matchEspecialidad) && matchCategoria && matchRol;
+      });
+
+      mostrarPerfiles(filtrados);
+    }
+
+    document.getElementById("busqueda").addEventListener("input", filtrar);
+    document.getElementById("categoria").addEventListener("change", filtrar);
+    document.getElementById("rol").addEventListener("change", filtrar);
 
     cargarPerfiles();
   </script>
 </body>
 </html>
-
-
