@@ -1,94 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎭 Perfiles Artísticos</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CosNet UY - Perfiles</title>
+  <!-- IMPORTANTE: el nombre del CSS debe ser exactamente styles.css -->
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>🎭 Perfiles Artísticos</h1>
+  <header>
+    <h1>CosNet UY</h1>
+    <nav><a href="#">Perfiles</a></nav>
+  </header>
 
-  <div class="filtros">
-    <select id="rolFiltro">
-      <option value="todos">Todos los roles</option>
-      <option value="actor">Actor</option>
-      <option value="dibujante">Dibujante</option>
-      <option value="músico">Músico</option>
-    </select>
+  <main class="container">
+    <h2>Descubre Cosplayers de Uruguay</h2>
+    <p>Busca, filtra y conecta con cosplayers de todo el país.</p>
 
-    <select id="tipoFiltro">
-      <option value="todos">Todos</option>
-      <option value="aprendiz">Aprendiz</option>
-      <option value="mentor">Mentor</option>
-      <option value="ambos">Ambos</option>
-    </select>
-  </div>
+    <div class="filtros">
+      <input type="text" id="busqueda" placeholder="Buscar por nombre o especialidad...">
+      <select id="categoria">
+        <option value="">Todas las Especialidades</option>
+        <option value="armaduras">Armaduras</option>
+        <option value="props">Props</option>
+        <option value="maquillaje">Maquillaje</option>
+        <option value="pelucas">Pelucas</option>
+        <option value="costura">Costura</option>
+      </select>
+      <select id="rol">
+        <option value="">Todos los Roles</option>
+        <option value="aprendiz">Aprendiz</option>
+        <option value="mentor">Mentor</option>
+        <option value="ambos">Ambos</option>
+      </select>
+    </div>
 
-  <div id="perfiles"></div>
+    <div id="perfiles" class="grid">
+      <p style="text-align:center;">Cargando perfiles...</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
+  </footer>
 
   <script>
-    const perfiles = [
-      { id: 1, nombre: "Fuegito", rol: "aprendiz", categoria: "dibujante", colorNivel: 1 },
-      { id: 2, nombre: "Alicia", rol: "mentor", categoria: "actor", colorNivel: 2 },
-      { id: 3, nombre: "Luna", rol: "ambos", categoria: "músico", colorNivel: 3 },
-    ];
+    // -------------------------
+    // CONFIG: cambia si hiciera falta
+    // -------------------------
+    const API_URL = "/api/proxy"; // <-- debe responder JSON array de perfiles
+    const START_COLOR = [255,60,60];   // rojo
+    const END_COLOR   = [155,80,255];  // morado
 
-    const colorInicio = "#ff0000"; // rojo
-    const colorFinal = "#8000ff";  // morado
+    let perfilesData = [];
 
-    function interpolarColor(color1, color2, factor) {
-      const c1 = parseInt(color1.slice(1), 16);
-      const c2 = parseInt(color2.slice(1), 16);
-      const r1 = (c1 >> 16) & 255, g1 = (c1 >> 8) & 255, b1 = c1 & 255;
-      const r2 = (c2 >> 16) & 255, g2 = (c2 >> 8) & 255, b2 = c2 & 255;
-      const r = Math.round(r1 + factor * (r2 - r1));
-      const g = Math.round(g1 + factor * (g2 - g1));
-      const b = Math.round(b1 + factor * (b2 - b1));
-      return `rgb(${r}, ${g}, ${b})`;
+    // Fetch y render
+    async function cargarPerfiles() {
+      const cont = document.getElementById("perfiles");
+      cont.innerHTML = "<p style='text-align:center;'>Cargando perfiles...</p>";
+      try {
+        const res = await fetch(API_URL, {cache: "no-store"});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!Array.isArray(json)) throw new Error("La API no devolvió un array.");
+        perfilesData = json;
+        mostrarPerfiles(perfilesData);
+      } catch (err) {
+        console.error("Error cargarPerfiles:", err);
+        cont.innerHTML = `<p style="color:red;text-align:center;">Error al cargar perfiles.</p>`;
+      }
     }
 
-    function renderizarPerfiles() {
-      const rolFiltro = document.getElementById("rolFiltro").value;
-      const tipoFiltro = document.getElementById("tipoFiltro").value;
-      const contenedor = document.getElementById("perfiles");
-      contenedor.innerHTML = "";
-
-      const filtrados = perfiles.filter(p =>
-        (rolFiltro === "todos" || p.categoria === rolFiltro) &&
-        (tipoFiltro === "todos" || p.rol === tipoFiltro)
-      );
-
-      if (filtrados.length === 0) {
-        contenedor.innerHTML = "<p>No se encontraron perfiles.</p>";
+    // Mostrar tarjetas con gradiente
+    function mostrarPerfiles(list) {
+      const cont = document.getElementById("perfiles");
+      cont.innerHTML = "";
+      if (!list || list.length === 0) {
+        cont.innerHTML = "<p style='text-align:center;'>No se encontraron resultados.</p>";
         return;
       }
 
-      const x = filtrados.length;
-      filtrados.forEach((p, i) => {
-        const color = interpolarColor(colorInicio, colorFinal, i / (x - 1));
-        const div = document.createElement("div");
-        div.className = "perfil";
-        div.style.borderColor = color;
-        div.innerHTML = `
-          <h2>${p.nombre}</h2>
-          <p><b>Rol:</b> ${p.rol}</p>
-          <p><b>Categoría:</b> ${p.categoria}</p>
-          <button onclick="verPerfil(${p.id})">Ver Perfil</button>
+      // Usamos la lista filtrada para calcular gradiente (según la posición dentro de 'list')
+      list.forEach((p, idx) => {
+        const total = list.length;
+        const t = total > 1 ? idx / (total - 1) : 0;
+        const r = Math.round(START_COLOR[0] + t * (END_COLOR[0] - START_COLOR[0]));
+        const g = Math.round(START_COLOR[1] + t * (END_COLOR[1] - START_COLOR[1]));
+        const b = Math.round(START_COLOR[2] + t * (END_COLOR[2] - START_COLOR[2]));
+        const color = `rgb(${r},${g},${b})`;
+
+        // build specialties safely
+        let especialidadesHtml = "";
+        if (Array.isArray(p.especialidades)) {
+          especialidadesHtml = p.especialidades.map(e => `<span>${escapeHtml(String(e))}</span>`).join("");
+        } else if (p.especialidades) {
+          especialidadesHtml = `<span>${escapeHtml(String(p.especialidades))}</span>`;
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.borderTop = `3px solid ${color}`;
+        card.innerHTML = `
+          <h3 style="color:${color}">${escapeHtml(p.nombre || "Sin nombre")}</h3>
+          <p><b>Rol:</b> ${escapeHtml(p.rol || "N/A")}</p>
+          <p>${escapeHtml(p.descripcion || "Sin descripción")}</p>
+          <div class="tags">${especialidadesHtml}</div>
+          <a class="btn" href="perfil.html?id=${encodeURIComponent(p.id ?? p.user_id ?? "")}">Ver Perfil</a>
         `;
-        contenedor.appendChild(div);
+        cont.appendChild(card);
       });
     }
 
-    function verPerfil(id) {
-      // Redirige a la página del perfil con su ID
-      window.location.href = `perfil.html?id=${id}`;
+    // Filtrado (busqueda + categoria + rol)
+    function filtrar() {
+      const texto = document.getElementById("busqueda").value.trim().toLowerCase();
+      const categoria = document.getElementById("categoria").value.trim().toLowerCase();
+      const rol = document.getElementById("rol").value.trim().toLowerCase();
+
+      const filtrados = perfilesData.filter(p => {
+        const nombre = String(p.nombre || "").toLowerCase();
+        const descripcion = String(p.descripcion || "").toLowerCase();
+        const especialidades = Array.isArray(p.especialidades)
+          ? p.especialidades.map(s => String(s||"").toLowerCase())
+          : [String(p.especialidades||"").toLowerCase()];
+
+        const matchTexto =
+          texto === "" ||
+          nombre.includes(texto) ||
+          descripcion.includes(texto) ||
+          especialidades.some(e => e.includes(texto));
+
+        const matchCategoria =
+          categoria === "" ||
+          especialidades.some(e => e.includes(categoria));
+
+        const matchRol =
+          rol === "" ||
+          String(p.rol || "").toLowerCase() === rol;
+
+        return matchTexto && matchCategoria && matchRol;
+      });
+
+      mostrarPerfiles(filtrados);
     }
 
-    document.getElementById("rolFiltro").addEventListener("change", renderizarPerfiles);
-    document.getElementById("tipoFiltro").addEventListener("change", renderizarPerfiles);
+    // Escape simple para inyectar texto en HTML seguro
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+      );
+    }
 
-    renderizarPerfiles();
+    // Listeners de filtros
+    document.getElementById("busqueda").addEventListener("input", debounce(filtrar, 150));
+    document.getElementById("categoria").addEventListener("change", filtrar);
+    document.getElementById("rol").addEventListener("change", filtrar);
+
+    // pequeña util: debounce
+    function debounce(fn, ms=100){
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); };
+    }
+
+    // inicio
+    cargarPerfiles();
   </script>
 </body>
 </html>
