@@ -1,175 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CosNet UY - Perfiles</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎭 Perfiles Artísticos</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>CosNet UY</h1>
-    <nav>
-      <a href="#">Perfiles</a>
-    </nav>
-  </header>
+  <h1>🎭 Perfiles Artísticos</h1>
 
-  <main class="container">
-    <h2>Descubre Cosplayers de Uruguay</h2>
-    <p>Busca, filtra y conecta con cosplayers de todo el país.</p>
+  <div class="filtros">
+    <select id="rolFiltro">
+      <option value="todos">Todos los roles</option>
+      <option value="actor">Actor</option>
+      <option value="dibujante">Dibujante</option>
+      <option value="músico">Músico</option>
+    </select>
 
-    <div class="filtros">
-      <input type="text" id="busqueda" placeholder="Buscar por nombre o especialidad...">
-
-      <select id="categoria">
-        <option value="">Todas las Especialidades</option>
-        <option value="armaduras">Armaduras</option>
-        <option value="props">Props</option>
-        <option value="maquillaje">Maquillaje</option>
-        <option value="pelucas">Pelucas</option>
-        <option value="costura">Costura</option>
-      </select>
-
-      <select id="rol">
-        <option value="">Todos los Roles</option>
-        <option value="aprendiz">Aprendiz</option>
-        <option value="mentor">Mentor</option>
-        <option value="ambos">Ambos</option>
-      </select>
-    </div>
-
-    <div id="perfiles" class="grid">
-      <p style="text-align:center;">Cargando perfiles...</p>
-    </div>
-  </main>
-
-  <footer>
-    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
-  </footer>
-
-  <!-- 🪄 Modal de Perfil -->
-  <div id="perfilModal" class="modal">
-    <div class="modal-content">
-      <span class="cerrar">&times;</span>
-      <h3 id="modalNombre"></h3>
-      <p><b>Rol:</b> <span id="modalRol"></span></p>
-      <p id="modalDescripcion"></p>
-      <div class="tags" id="modalTags"></div>
-    </div>
+    <select id="tipoFiltro">
+      <option value="todos">Todos</option>
+      <option value="aprendiz">Aprendiz</option>
+      <option value="mentor">Mentor</option>
+      <option value="ambos">Ambos</option>
+    </select>
   </div>
 
-  <script>
-    const API_URL = "/api/proxy";
-    const startColor = [255, 60, 60];
-    const endColor = [155, 80, 255];
-    let perfilesData = [];
+  <div id="perfiles"></div>
 
-    async function cargarPerfiles() {
-      const contenedor = document.getElementById("perfiles");
-      try {
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        perfilesData = await res.json();
-        mostrarPerfiles(perfilesData);
-      } catch (e) {
-        contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
-      }
+  <script>
+    const perfiles = [
+      { id: 1, nombre: "Fuegito", rol: "aprendiz", categoria: "dibujante", colorNivel: 1 },
+      { id: 2, nombre: "Alicia", rol: "mentor", categoria: "actor", colorNivel: 2 },
+      { id: 3, nombre: "Luna", rol: "ambos", categoria: "músico", colorNivel: 3 },
+    ];
+
+    const colorInicio = "#ff0000"; // rojo
+    const colorFinal = "#8000ff";  // morado
+
+    function interpolarColor(color1, color2, factor) {
+      const c1 = parseInt(color1.slice(1), 16);
+      const c2 = parseInt(color2.slice(1), 16);
+      const r1 = (c1 >> 16) & 255, g1 = (c1 >> 8) & 255, b1 = c1 & 255;
+      const r2 = (c2 >> 16) & 255, g2 = (c2 >> 8) & 255, b2 = c2 & 255;
+      const r = Math.round(r1 + factor * (r2 - r1));
+      const g = Math.round(g1 + factor * (g2 - g1));
+      const b = Math.round(b1 + factor * (b2 - b1));
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
-    function mostrarPerfiles(perfiles) {
+    function renderizarPerfiles() {
+      const rolFiltro = document.getElementById("rolFiltro").value;
+      const tipoFiltro = document.getElementById("tipoFiltro").value;
       const contenedor = document.getElementById("perfiles");
       contenedor.innerHTML = "";
 
-      if (perfiles.length === 0) {
-        contenedor.innerHTML = "<p>No se encontraron resultados.</p>";
+      const filtrados = perfiles.filter(p =>
+        (rolFiltro === "todos" || p.categoria === rolFiltro) &&
+        (tipoFiltro === "todos" || p.rol === tipoFiltro)
+      );
+
+      if (filtrados.length === 0) {
+        contenedor.innerHTML = "<p>No se encontraron perfiles.</p>";
         return;
       }
 
-      perfiles.forEach((p, i) => {
-        const total = perfiles.length;
-        const t = total > 1 ? i / (total - 1) : 0;
-        const r = Math.round(startColor[0] + t * (endColor[0] - startColor[0]));
-        const g = Math.round(startColor[1] + t * (endColor[1] - startColor[1]));
-        const b = Math.round(startColor[2] + t * (endColor[2] - startColor[2]));
-        const color = `rgb(${r},${g},${b})`;
-
-        const especialidades = Array.isArray(p.especialidades)
-          ? p.especialidades.map(e => `<span>${e}</span>`).join("")
-          : `<span>${p.especialidades || ""}</span>`;
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.style.borderTop = `3px solid ${color}`;
-        card.innerHTML = `
-          <h3 style="color:${color}">${p.nombre || "Sin nombre"}</h3>
-          <p><b>Rol:</b> ${p.rol || "N/A"}</p>
-          <p>${p.descripcion || "Sin descripción"}</p>
-          <div class="tags">${especialidades}</div>
-          <a href="#" class="btn ver-perfil">Ver Perfil</a>
+      const x = filtrados.length;
+      filtrados.forEach((p, i) => {
+        const color = interpolarColor(colorInicio, colorFinal, i / (x - 1));
+        const div = document.createElement("div");
+        div.className = "perfil";
+        div.style.borderColor = color;
+        div.innerHTML = `
+          <h2>${p.nombre}</h2>
+          <p><b>Rol:</b> ${p.rol}</p>
+          <p><b>Categoría:</b> ${p.categoria}</p>
+          <button onclick="verPerfil(${p.id})">Ver Perfil</button>
         `;
-
-        card.querySelector(".ver-perfil").addEventListener("click", (e) => {
-          e.preventDefault();
-          abrirModal(p, color);
-        });
-
-        contenedor.appendChild(card);
+        contenedor.appendChild(div);
       });
     }
 
-    function abrirModal(perfil, color) {
-      const modal = document.getElementById("perfilModal");
-      document.getElementById("modalNombre").innerText = perfil.nombre || "Sin nombre";
-      document.getElementById("modalRol").innerText = perfil.rol || "N/A";
-      document.getElementById("modalDescripcion").innerText = perfil.descripcion || "Sin descripción";
-      document.getElementById("modalTags").innerHTML = Array.isArray(perfil.especialidades)
-        ? perfil.especialidades.map(e => `<span>${e}</span>`).join("")
-        : `<span>${perfil.especialidades || ""}</span>`;
-      document.getElementById("modalNombre").style.color = color;
-      modal.style.display = "flex";
+    function verPerfil(id) {
+      // Redirige a la página del perfil con su ID
+      window.location.href = `perfil.html?id=${id}`;
     }
 
-    document.querySelector(".cerrar").addEventListener("click", () => {
-      document.getElementById("perfilModal").style.display = "none";
-    });
+    document.getElementById("rolFiltro").addEventListener("change", renderizarPerfiles);
+    document.getElementById("tipoFiltro").addEventListener("change", renderizarPerfiles);
 
-    window.addEventListener("click", (e) => {
-      const modal = document.getElementById("perfilModal");
-      if (e.target === modal) modal.style.display = "none";
-    });
-
-    function filtrar() {
-      const texto = document.getElementById("busqueda").value.toLowerCase();
-      const categoria = document.getElementById("categoria").value.toLowerCase();
-      const rol = document.getElementById("rol").value.toLowerCase();
-
-      const filtrados = perfilesData.filter(p => {
-        const matchTexto =
-          p.nombre?.toLowerCase().includes(texto) ||
-          p.descripcion?.toLowerCase().includes(texto) ||
-          (Array.isArray(p.especialidades)
-            ? p.especialidades.some(e => e.toLowerCase().includes(texto))
-            : p.especialidades?.toLowerCase().includes(texto));
-
-        const matchCategoria = categoria
-          ? (Array.isArray(p.especialidades)
-              ? p.especialidades.some(e => e.toLowerCase().includes(categoria))
-              : p.especialidades?.toLowerCase().includes(categoria))
-          : true;
-
-        const matchRol = rol ? (p.rol?.toLowerCase() === rol) : true;
-
-        return matchTexto && matchCategoria && matchRol;
-      });
-
-      mostrarPerfiles(filtrados);
-    }
-
-    document.getElementById("busqueda").addEventListener("input", filtrar);
-    document.getElementById("categoria").addEventListener("change", filtrar);
-    document.getElementById("rol").addEventListener("change", filtrar);
-
-    cargarPerfiles();
+    renderizarPerfiles();
   </script>
 </body>
 </html>
