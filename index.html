@@ -3,74 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="favicom_cosnet.png" rel="icon" type="image/x-icon">
+  <title>CosNet UY - Perfiles</title>
   <link rel="stylesheet" href="styles.css">
-  <title>CosNet</title>
 </head>
 <body>
-  <h1>🎭 Perfiles Artísticos</h1>
+  <header>
+    <h1>CosNet UY</h1>
+    <nav>
+      <a href="#">Perfiles</a>
+    </nav>
+  </header>
 
-  <div id="filtros">
-    <select id="categoriaRol">
-      <option value="">Todos los roles</option>
-      <option value="aprendiz">Aprendiz</option>
-      <option value="mentor">Mentor</option>
-      <option value="ambos">Ambos</option>
-    </select>
-  </div>
+  <main class="container">
+    <h2>Descubre Cosplayers de Uruguay</h2>
+    <p>Busca, filtra y conecta con cosplayers de todo el país.</p>
 
-  <div id="perfiles"></div>
+    <div class="filtros">
+      <input type="text" id="busqueda" placeholder="Buscar por nombre o especialidad...">
+      <select id="categoria">
+        <option value="">Todas las Especialidades</option>
+        <option value="armaduras">Armaduras</option>
+        <option value="props">Props</option>
+        <option value="maquillaje">Maquillaje</option>
+        <option value="pelucas">Pelucas</option>
+        <option value="costura">Costura</option>
+      </select>
+      <select id="rol">
+        <option value="">Todos los Roles</option>
+        <option value="aprendiz">Aprendiz</option>
+        <option value="mentor">Mentor</option>
+        <option value="ambos">Ambos</option>
+      </select>
+    </div>
+
+    <div id="perfiles" class="grid">
+      <p style="text-align:center;">Cargando perfiles...</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
+  </footer>
 
   <script>
-    const API_URL = "/api/proxy.js"; // ✅ Se conecta al proxy local
+    const API_URL = "/api/proxy";
+    const startColor = [255, 60, 60];
+    const endColor = [155, 80, 255];
+    let perfilesData = [];
 
     async function cargarPerfiles() {
       const contenedor = document.getElementById("perfiles");
-      const rolFiltro = document.getElementById("categoriaRol").value;
-
       try {
         const res = await fetch(API_URL);
-        const perfiles = await res.json();
-
-        if (!Array.isArray(perfiles) || perfiles.length === 0) {
-          contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
-          return;
-        }
-
-        const filtrados = rolFiltro
-          ? perfiles.filter(p => p.rol?.toLowerCase() === rolFiltro)
-          : perfiles;
-
-        contenedor.innerHTML = filtrados.map((p, i) => `
-          <div class="perfil" style="border-color:${generarColorGradiente(i, perfiles.length)};">
-            <h2>${p.nombre || "Sin nombre"}</h2>
-            <p><b>Rol:</b> ${p.rol || "N/A"}</p>
-            <p><b>Descripción:</b> ${p.descripcion || "Sin descripción"}</p>
-            <button onclick="verPerfil('${p.id}')">Ver perfil</button>
-          </div>
-        `).join("");
-
-      } catch (err) {
-        console.error("❌ Error al cargar perfiles:", err);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        perfilesData = await res.json();
+        mostrarPerfiles(perfilesData);
+      } catch (e) {
         contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
       }
     }
 
-    function generarColorGradiente(index, total) {
-      const start = [255, 0, 0]; // rojo
-      const end = [128, 0, 255]; // morado
-      const ratio = index / (total - 1);
-      const r = Math.round(start[0] + ratio * (end[0] - start[0]));
-      const g = Math.round(start[1] + ratio * (end[1] - start[1]));
-      const b = Math.round(start[2] + ratio * (end[2] - start[2]));
-      return `rgb(${r},${g},${b})`;
+    function mostrarPerfiles(perfiles) {
+      const contenedor = document.getElementById("perfiles");
+      contenedor.innerHTML = "";
+
+      if (perfiles.length === 0) {
+        contenedor.innerHTML = "<p>No se encontraron resultados.</p>";
+        return;
+      }
+
+      perfiles.forEach((p, i) => {
+        const total = perfiles.length;
+        const t = total > 1 ? i / (total - 1) : 0;
+        const r = Math.round(startColor[0] + t * (endColor[0] - startColor[0]));
+        const g = Math.round(startColor[1] + t * (endColor[1] - startColor[1]));
+        const b = Math.round(startColor[2] + t * (endColor[2] - startColor[2]));
+        const color = `rgb(${r},${g},${b})`;
+
+        const especialidades = Array.isArray(p.especialidades)
+          ? p.especialidades.map(e => `<span>${e}</span>`).join("")
+          : `<span>${p.especialidades || ""}</span>`;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.borderTop = `3px solid ${color}`;
+        card.innerHTML = `
+          <h3 style="color:${color}">${p.nombre || "Sin nombre"}</h3>
+          <p><b>Rol:</b> ${p.rol || "N/A"}</p>
+          <p>${p.descripcion || "Sin descripción"}</p>
+          <div class="tags">${especialidades}</div>
+          <a href="perfil.html?id=${p.id}" class="btn">Ver Perfil</a>
+        `;
+        contenedor.appendChild(card);
+      });
     }
 
-    function verPerfil(id) {
-      window.location.href = `perfil.html?id=${id}`;
+    function filtrar() {
+      const texto = document.getElementById("busqueda").value.toLowerCase();
+      const categoria = document.getElementById("categoria").value.toLowerCase();
+      const rol = document.getElementById("rol").value.toLowerCase();
+
+      const filtrados = perfilesData.filter(p => {
+        const matchNombre = p.nombre?.toLowerCase().includes(texto);
+        const matchDescripcion = p.descripcion?.toLowerCase().includes(texto);
+        const matchEspecialidad = Array.isArray(p.especialidades)
+          ? p.especialidades.some(e => e.toLowerCase().includes(texto))
+          : p.especialidades?.toLowerCase().includes(texto);
+
+        const matchCategoria = categoria
+          ? Array.isArray(p.especialidades)
+            ? p.especialidades.some(e => e.toLowerCase().includes(categoria))
+            : p.especialidades?.toLowerCase().includes(categoria)
+          : true;
+
+        const matchRol = rol ? (p.rol?.toLowerCase() === rol) : true;
+
+        return (matchNombre || matchDescripcion || matchEspecialidad) && matchCategoria && matchRol;
+      });
+
+      mostrarPerfiles(filtrados);
     }
 
-    document.getElementById("categoriaRol").addEventListener("change", cargarPerfiles);
+    document.getElementById("busqueda").addEventListener("input", filtrar);
+    document.getElementById("categoria").addEventListener("change", filtrar);
+    document.getElementById("rol").addEventListener("change", filtrar);
+
     cargarPerfiles();
   </script>
 </body>
