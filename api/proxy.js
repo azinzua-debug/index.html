@@ -1,32 +1,22 @@
 export default async function handler(req, res) {
   try {
-    const { tipo, id } = req.query;
+    const perfilesRes = await fetch("http://216.173.77.190:25791/profiles");
+    const portafolioRes = await fetch("http://216.173.77.190:25791/portafolio");
 
-    // Determina el endpoint según el tipo
-    let baseUrl;
-    if (tipo === "perfiles") {
-      baseUrl = "http://216.173.77.190:25791/profiles";
-    } else if (tipo === "portafolio") {
-      baseUrl = "http://216.173.77.190:25791/portafolio";
-    } else {
-      return res.status(400).json({ error: "Tipo de solicitud inválido. Usa 'perfiles' o 'portafolio'." });
+    if (!perfilesRes.ok || !portafolioRes.ok) {
+      throw new Error("Error al conectar con los servidores base");
     }
 
-    // Si hay ID, lo agregamos al final
-    const url = id ? `${baseUrl}?id=${id}` : baseUrl;
+    const perfiles = await perfilesRes.json();
+    const portafolio = await portafolioRes.json();
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Error al conectar con ${url}`);
-    }
-
-    const data = await response.json();
-
-    // CORS + respuesta
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.status(200).json(data);
+    res.status(200).json({
+      perfiles,
+      portafolio
+    });
   } catch (err) {
     console.error("❌ Error en proxy.js:", err);
-    res.status(500).json({ error: "No se pudo conectar al servidor base", detalle: err.message });
+    res.status(500).json({ error: "No se pudo conectar al servidor base" });
   }
 }
