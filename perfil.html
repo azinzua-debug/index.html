@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perfil Artístico</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
     body {
-      background-color: #0d0d0d;
+      background: radial-gradient(circle at top, #1a1a1a, #000);
       color: #f8f8f8;
       font-family: "Poppins", sans-serif;
       text-align: center;
@@ -15,12 +14,12 @@
     }
 
     .perfil-container {
-      max-width: 700px;
+      max-width: 750px;
       margin: 0 auto;
-      background: rgba(30, 30, 30, 0.9);
+      background: rgba(20, 20, 20, 0.9);
       border: 2px solid #ffcc00;
       border-radius: 20px;
-      box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.25);
       padding: 30px;
       transition: transform 0.3s;
     }
@@ -45,14 +44,14 @@
     }
 
     h2 {
-      color: #aaa;
+      color: #bbb;
       font-weight: 400;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     p {
       line-height: 1.6;
-      font-size: 1.1em;
+      font-size: 1.05em;
       color: #ddd;
       margin: 10px 0;
     }
@@ -111,6 +110,37 @@
     .volver:hover {
       background: #fff;
     }
+
+    .portafolio {
+      margin-top: 30px;
+    }
+
+    .portafolio h3 {
+      color: #ffcc00;
+      margin-bottom: 15px;
+      font-size: 1.4em;
+    }
+
+    .imagenes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .imagenes img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid #ffcc00;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .imagenes img:hover {
+      transform: scale(1.05);
+      border-color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -129,16 +159,21 @@
       }
 
       try {
+        // === Cargar datos del perfil principal ===
         const res = await fetch(`https://perfiles-artisticos.onrender.com/api/perfiles/${id}`);
         if (!res.ok) throw new Error("Perfil no encontrado");
         const perfil = await res.json();
+
+        // === Cargar portafolio ===
+        const portRes = await fetch(`http://216.173.77.190:25791/portafolio?id=${id}`);
+        const portafolio = portRes.ok ? await portRes.json() : [];
 
         contenedor.innerHTML = `
           <img src="${perfil.imagen || 'https://via.placeholder.com/150'}" alt="${perfil.nombre}" class="perfil-imagen">
           <h1>${perfil.nombre}</h1>
           <h2>${perfil.rol || 'Artista'}</h2>
           <p>${perfil.biografia || 'Sin biografía disponible.'}</p>
-          
+
           <div class="habilidades">
             ${(perfil.habilidades && perfil.habilidades.length > 0)
               ? perfil.habilidades.map(h => `<div class="habilidad">${h}</div>`).join('')
@@ -150,9 +185,19 @@
             ${perfil.twitter ? `<a href="${perfil.twitter}" target="_blank">Twitter</a>` : ""}
             ${perfil.tiktok ? `<a href="${perfil.tiktok}" target="_blank">TikTok</a>` : ""}
           </div>
+
+          <div class="portafolio">
+            <h3>🖼️ Portafolio</h3>
+            <div class="imagenes">
+              ${portafolio.length > 0
+                ? portafolio.map(img => `<img src="${img.url}" alt="Imagen de portafolio">`).join('')
+                : '<p>No hay imágenes en el portafolio.</p>'}
+            </div>
+          </div>
         `;
       } catch (error) {
-        contenedor.innerHTML = `<p id='error'>❌ Perfil no encontrado o error al cargar.</p>`;
+        console.error(error);
+        contenedor.innerHTML = `<p id='error'>❌ Error al cargar el perfil o el portafolio.</p>`;
       }
     }
 
