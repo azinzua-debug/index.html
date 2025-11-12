@@ -20,6 +20,7 @@
 
     <div class="filtros">
       <input type="text" id="busqueda" placeholder="Buscar por nombre o especialidad...">
+
       <select id="categoria">
         <option value="">Todas las Especialidades</option>
         <option value="armaduras">Armaduras</option>
@@ -28,6 +29,7 @@
         <option value="pelucas">Pelucas</option>
         <option value="costura">Costura</option>
       </select>
+
       <select id="rol">
         <option value="">Todos los Roles</option>
         <option value="aprendiz">Aprendiz</option>
@@ -44,6 +46,17 @@
   <footer>
     <p>© 2025 CosNet UY — Comunidad de Cosplayers de Uruguay</p>
   </footer>
+
+  <!-- 🪄 Modal de Perfil -->
+  <div id="perfilModal" class="modal">
+    <div class="modal-content">
+      <span class="cerrar">&times;</span>
+      <h3 id="modalNombre"></h3>
+      <p><b>Rol:</b> <span id="modalRol"></span></p>
+      <p id="modalDescripcion"></p>
+      <div class="tags" id="modalTags"></div>
+    </div>
+  </div>
 
   <script>
     const API_URL = "/api/proxy";
@@ -92,11 +105,38 @@
           <p><b>Rol:</b> ${p.rol || "N/A"}</p>
           <p>${p.descripcion || "Sin descripción"}</p>
           <div class="tags">${especialidades}</div>
-          <a href="perfil.html?id=${p.id}" class="btn">Ver Perfil</a>
+          <a href="#" class="btn ver-perfil">Ver Perfil</a>
         `;
+
+        card.querySelector(".ver-perfil").addEventListener("click", (e) => {
+          e.preventDefault();
+          abrirModal(p, color);
+        });
+
         contenedor.appendChild(card);
       });
     }
+
+    function abrirModal(perfil, color) {
+      const modal = document.getElementById("perfilModal");
+      document.getElementById("modalNombre").innerText = perfil.nombre || "Sin nombre";
+      document.getElementById("modalRol").innerText = perfil.rol || "N/A";
+      document.getElementById("modalDescripcion").innerText = perfil.descripcion || "Sin descripción";
+      document.getElementById("modalTags").innerHTML = Array.isArray(perfil.especialidades)
+        ? perfil.especialidades.map(e => `<span>${e}</span>`).join("")
+        : `<span>${perfil.especialidades || ""}</span>`;
+      document.getElementById("modalNombre").style.color = color;
+      modal.style.display = "flex";
+    }
+
+    document.querySelector(".cerrar").addEventListener("click", () => {
+      document.getElementById("perfilModal").style.display = "none";
+    });
+
+    window.addEventListener("click", (e) => {
+      const modal = document.getElementById("perfilModal");
+      if (e.target === modal) modal.style.display = "none";
+    });
 
     function filtrar() {
       const texto = document.getElementById("busqueda").value.toLowerCase();
@@ -104,21 +144,22 @@
       const rol = document.getElementById("rol").value.toLowerCase();
 
       const filtrados = perfilesData.filter(p => {
-        const matchNombre = p.nombre?.toLowerCase().includes(texto);
-        const matchDescripcion = p.descripcion?.toLowerCase().includes(texto);
-        const matchEspecialidad = Array.isArray(p.especialidades)
-          ? p.especialidades.some(e => e.toLowerCase().includes(texto))
-          : p.especialidades?.toLowerCase().includes(texto);
+        const matchTexto =
+          p.nombre?.toLowerCase().includes(texto) ||
+          p.descripcion?.toLowerCase().includes(texto) ||
+          (Array.isArray(p.especialidades)
+            ? p.especialidades.some(e => e.toLowerCase().includes(texto))
+            : p.especialidades?.toLowerCase().includes(texto));
 
         const matchCategoria = categoria
-          ? Array.isArray(p.especialidades)
-            ? p.especialidades.some(e => e.toLowerCase().includes(categoria))
-            : p.especialidades?.toLowerCase().includes(categoria)
+          ? (Array.isArray(p.especialidades)
+              ? p.especialidades.some(e => e.toLowerCase().includes(categoria))
+              : p.especialidades?.toLowerCase().includes(categoria))
           : true;
 
         const matchRol = rol ? (p.rol?.toLowerCase() === rol) : true;
 
-        return (matchNombre || matchDescripcion || matchEspecialidad) && matchCategoria && matchRol;
+        return matchTexto && matchCategoria && matchRol;
       });
 
       mostrarPerfiles(filtrados);
