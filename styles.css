@@ -1,0 +1,58 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #0b0b14;
+  color: #eee;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #b89cff;
+  font-size: 2.2em;
+  margin-bottom: 15px;
+}
+
+#filtros {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+select {
+  background-color: #1b1b2e;
+  color: #ddd;
+  border: 1px solid #555;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9em;
+}
+
+#perfiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.perfil {
+  background-color: #151525;
+  border-radius: 15px;
+  padding: 15px;
+  transition: transform 0.2s, box-shadow 0.3s;
+}
+
+.perfil:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+}
+
+.perfil h2 {
+  color: #b89cff;
+  margin-top: 0;
+}
+
+b {
+  color: #b89cff;
+}
