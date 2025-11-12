@@ -3,75 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎭 Perfiles Artísticos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #eee;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #ffcc00;
-    }
-    #perfiles {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    .perfil {
-      background-color: #222;
-      border: 2px solid #ffcc00;
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
-    }
-    .perfil h2 {
-      margin-top: 0;
-      color: #ffcc00;
-    }
-  </style>
+  <link href="favicom_cosnet.png" rel="icon" type="image/x-icon">
+  <title>CosNet UY</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>🎭 Perfiles Artísticos</h1>
-  <div id="perfiles">Cargando perfiles...</div>
+  <h1>🎭 Descubre Cosplayers de Uruguay</h1>
+
+  <div id="filtros">
+    <select id="filtroEspecialidad">
+      <option value="todas">Todas las Especialidades</option>
+      <option value="armaduras">Armaduras</option>
+      <option value="props">Props</option>
+      <option value="pelucas">Pelucas</option>
+      <option value="costura">Costura</option>
+      <option value="maquillaje">Maquillaje</option>
+    </select>
+
+    <select id="filtroRol">
+      <option value="todos">Todos los Roles</option>
+      <option value="Aprendiz">Aprendiz</option>
+      <option value="Mentor">Mentor</option>
+      <option value="Ambos">Ambos</option>
+    </select>
+  </div>
+
+  <div id="perfiles"></div>
 
   <script>
-  const API_URL = "/api/proxy"; // ✅ usa el proxy de vercel
-
-  async function cargarPerfiles() {
+    const API_URL = "https://cosneto-proxy.onrender.com"; // Cambia a tu API
     const contenedor = document.getElementById("perfiles");
+    const filtroEspecialidad = document.getElementById("filtroEspecialidad");
+    const filtroRol = document.getElementById("filtroRol");
 
-    try {
-      const res = await fetch(API_URL);
-      const perfiles = await res.json();
+    let perfiles = [];
 
-      if (!Array.isArray(perfiles) || perfiles.length === 0) {
+    // --- Función de color intermedio entre dos hex ---
+    function colorIntermedio(hex1, hex2, factor) {
+      const c1 = parseInt(hex1.slice(1), 16);
+      const c2 = parseInt(hex2.slice(1), 16);
+      const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
+      const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
+      const r = Math.round(r1 + factor * (r2 - r1));
+      const g = Math.round(g1 + factor * (g2 - g1));
+      const b = Math.round(b1 + factor * (b2 - b1));
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    async function cargarPerfiles() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        perfiles = await res.json();
+        renderizarPerfiles();
+      } catch (err) {
+        console.error("❌ Error al cargar perfiles:", err);
+        contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
+      }
+    }
+
+    function renderizarPerfiles() {
+      const especialidad = filtroEspecialidad.value.toLowerCase();
+      const rol = filtroRol.value.toLowerCase();
+
+      let filtrados = perfiles.filter(p => {
+        const coincideRol = rol === "todos" || (p.rol && p.rol.toLowerCase() === rol);
+        const coincideEsp = especialidad === "todas" ||
+          (Array.isArray(p.especialidades) &&
+           p.especialidades.some(e => e.toLowerCase().includes(especialidad)));
+        return coincideRol && coincideEsp;
+      });
+
+      if (filtrados.length === 0) {
         contenedor.innerHTML = "<p>No hay perfiles disponibles.</p>";
         return;
       }
 
-      contenedor.innerHTML = perfiles.map(p => `
-        <div class="perfil">
-          <h2>${p.nombre}</h2>
-          <p><b>Rol:</b> ${p.rol}</p>
-          <p><b>Descripción:</b> ${p.descripcion}</p>
-          <p><b>Especialidades:</b> ${Array.isArray(p.especialidades) ? p.especialidades.join(', ') : p.especialidades}</p>
-          <p><b>Redes:</b> ${p.redes}</p>
-          <p><b>Proyectos:</b> ${p.proyectos}</p>
-          <p><b>Cosplays:</b> ${p.cosplays}</p>
-        </div>
-      `).join("");
-    } catch (err) {
-      console.error("❌ Error al cargar perfiles:", err);
-      contenedor.innerHTML = "<p style='color:red;'>Error al cargar perfiles.</p>";
-    }
-  }
+      const colorInicio = "#ff0044"; // rojo
+      const colorFin = "#8f00ff"; // violeta
 
-  cargarPerfiles();
+      contenedor.innerHTML = filtrados.map((p, i) => {
+        const factor = filtrados.length === 1 ? 0 : i / (filtrados.length - 1);
+        const color = colorIntermedio(colorInicio, colorFin, factor);
+        return `
+          <div class="perfil" style="border-color:${color}; box-shadow:0 0 10px ${color};">
+            <h2>${p.nombre || "Sin nombre"}</h2>
+            <p><b>Rol:</b> ${p.rol || "N/A"}</p>
+            <p><b>Descripción:</b> ${p.descripcion || "Sin descripción"}</p>
+            <p><b>Especialidades:</b> ${Array.isArray(p.especialidades) ? p.especialidades.join(", ") : (p.especialidades || "N/A")}</p>
+            <p><b>Redes:</b> ${p.redes || "No especificadas"}</p>
+            <p><b>Proyectos:</b> ${p.proyectos || "No especificados"}</p>
+            <p><b>Cosplays:</b> ${p.cosplays || "No especificados"}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    filtroEspecialidad.addEventListener("change", renderizarPerfiles);
+    filtroRol.addEventListener("change", renderizarPerfiles);
+
+    cargarPerfiles();
   </script>
 </body>
 </html>
