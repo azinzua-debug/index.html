@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CosNet UY - Perfiles</title>
+  <!-- IMPORTANTE: el nombre del CSS debe ser exactamente styles.css -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -44,9 +45,9 @@
   </footer>
 
   <script>
-    const API_URL = "/api/proxy"; // Proxy local al backend
-    const START_COLOR = [255, 60, 60];
-    const END_COLOR   = [155, 80, 255];
+    const API_URL = "/api/proxy"; // tu proxy en Vercel / servidor
+    const START_COLOR = [255,60,60];
+    const END_COLOR   = [155,80,255];
     let perfilesData = [];
 
     async function cargarPerfiles() {
@@ -56,20 +57,25 @@
       try {
         const res = await fetch(API_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error("La API no devolvió un array.");
-        perfilesData = data;
+        const json = await res.json();
+
+        // Acepta dos formatos:
+        // 1) Array directo: [ {...}, {...} ]
+        // 2) Objeto combinado: { perfiles: [...], portafolio: [...] }
+        const perfiles = Array.isArray(json) ? json : (json.perfiles ?? json);
+        if (!Array.isArray(perfiles)) throw new Error("Formato inesperado desde el proxy");
+
+        perfilesData = perfiles;
         mostrarPerfiles(perfilesData);
       } catch (err) {
-        console.error("Error al cargar perfiles:", err);
-        cont.innerHTML = `<p style="color:red;text-align:center;">⚠ Error al cargar perfiles.</p>`;
+        console.error("Error cargarPerfiles:", err);
+        cont.innerHTML = `<p style="color:red;text-align:center;">Error al cargar perfiles.</p>`;
       }
     }
 
     function mostrarPerfiles(list) {
       const cont = document.getElementById("perfiles");
       cont.innerHTML = "";
-
       if (!list || list.length === 0) {
         cont.innerHTML = "<p style='text-align:center;'>No se encontraron resultados.</p>";
         return;
@@ -78,11 +84,9 @@
       list.forEach((p, idx) => {
         const total = list.length;
         const t = total > 1 ? idx / (total - 1) : 0;
-        const [r, g, b] = [
-          Math.round(START_COLOR[0] + t * (END_COLOR[0] - START_COLOR[0])),
-          Math.round(START_COLOR[1] + t * (END_COLOR[1] - START_COLOR[1])),
-          Math.round(START_COLOR[2] + t * (END_COLOR[2] - START_COLOR[2]))
-        ];
+        const r = Math.round(START_COLOR[0] + t * (END_COLOR[0] - START_COLOR[0]));
+        const g = Math.round(START_COLOR[1] + t * (END_COLOR[1] - START_COLOR[1]));
+        const b = Math.round(START_COLOR[2] + t * (END_COLOR[2] - START_COLOR[2]));
         const color = `rgb(${r},${g},${b})`;
 
         let especialidadesHtml = "";
@@ -92,6 +96,8 @@
           especialidadesHtml = `<span>${escapeHtml(String(p.especialidades))}</span>`;
         }
 
+        const id = encodeURIComponent(p.id ?? p.user_id ?? "");
+
         const div = document.createElement("div");
         div.className = "card";
         div.style.borderTop = `3px solid ${color}`;
@@ -100,13 +106,12 @@
           <p><b>Rol:</b> ${escapeHtml(p.rol || "N/A")}</p>
           <p>${escapeHtml(p.descripcion || "Sin descripción disponible.")}</p>
           <div class="tags">${especialidadesHtml}</div>
-          <a class="btn" href="perfil.html?id=${encodeURIComponent(p.id ?? p.user_id ?? "")}">Ver Perfil</a>
+          <a class="btn" href="perfil.html?id=${id}">Ver Perfil</a>
         `;
         cont.appendChild(div);
       });
     }
 
-    // Filtros de búsqueda
     function filtrar() {
       const texto = document.getElementById("busqueda").value.trim().toLowerCase();
       const categoria = document.getElementById("categoria").value.trim().toLowerCase();
@@ -116,8 +121,8 @@
         const nombre = String(p.nombre || "").toLowerCase();
         const descripcion = String(p.descripcion || "").toLowerCase();
         const especialidades = Array.isArray(p.especialidades)
-          ? p.especialidades.map(s => String(s || "").toLowerCase())
-          : [String(p.especialidades || "").toLowerCase()];
+          ? p.especialidades.map(s => String(s||"").toLowerCase())
+          : [String(p.especialidades||"").toLowerCase()];
 
         const matchTexto =
           texto === "" ||
@@ -139,14 +144,12 @@
       mostrarPerfiles(filtrados);
     }
 
-    // Protección contra inyecciones
     function escapeHtml(s) {
       return s.replace(/[&<>"']/g, c =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
       );
     }
 
-    // Pequeño debounce
     function debounce(fn, ms = 150) {
       let t;
       return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
@@ -156,6 +159,7 @@
     document.getElementById("categoria").addEventListener("change", filtrar);
     document.getElementById("rol").addEventListener("change", filtrar);
 
+    // Inicia la carga
     cargarPerfiles();
   </script>
 </body>
