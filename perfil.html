@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="perfil-container" class="perfil"></div>
+
   <script>
     const API_COMBINADO = "/api/proxy"; // Tu proxy local
 
@@ -29,31 +30,36 @@
         if (!res.ok) throw new Error("Error al conectar con el proxy");
         const data = await res.json();
 
-        const perfil = data.perfiles.find(p => String(p.id) === String(id));
+        // Buscar el perfil correspondiente
+        const perfil = data.perfiles.find(p => String(p.user_id) === String(id));
         if (!perfil) {
           contenedor.innerHTML = "<p>⚠ Perfil no encontrado.</p>";
           return;
         }
 
+        // Buscar las imágenes del portafolio
         const portafolio = data.portafolio.filter(p => String(p.user_id) === String(id));
 
         contenedor.innerHTML = `
           <div class="card">
-            <h2>${perfil.username || "Usuario sin nombre"}</h2>
-            <img src="${perfil.avatar || 'https://via.placeholder.com/150'}" alt="${perfil.username}" />
+            <h2>${perfil.nombre || "Usuario sin nombre"}</h2>
+            <img src="${perfil.avatar || 'https://via.placeholder.com/150'}" alt="${perfil.nombre}" />
             <p><b>Rol:</b> ${perfil.rol || "Artista"}</p>
-            <p><b>Bio:</b> ${perfil.descripcion || "Sin descripción."}</p>
+            <p><b>Descripción:</b> ${perfil.descripcion || "Sin descripción."}</p>
+            <p><b>Cosplays:</b> ${perfil.cosplays || "No especificado"}</p>
+            <p><b>Proyectos:</b> ${perfil.proyectos || "Ninguno"}</p>
 
             <h3>Portafolio</h3>
             <div class="portafolio">
-              ${portafolio.length > 0
-                ? portafolio.map(p => `
-                  <div class="port-item">
-                    <img src="${p.imagen_url}" alt="${p.personaje}" />
-                    <p>${p.personaje}</p>
-                  </div>
-                `).join("")
-                : "<p>Sin obras publicadas.</p>"
+              ${
+                portafolio.length > 0
+                  ? portafolio.map(p => `
+                    <div class="port-item">
+                      <img src="${p.imagen_url}" alt="${p.personaje}" />
+                      <p>${p.personaje}</p>
+                    </div>
+                  `).join("")
+                  : "<p>Sin obras publicadas.</p>"
               }
             </div>
           </div>
