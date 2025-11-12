@@ -48,7 +48,8 @@
     // -------------------------
     // CONFIG: cambia si hiciera falta
     // -------------------------
-    const API_URL = "/api/proxy"; // <-- debe responder JSON array de perfiles
+    const response = await fetch("/api/proxy/profiles");
+    const data = await response.json();
     const START_COLOR = [255,60,60];   // rojo
     const END_COLOR   = [155,80,255];  // morado
 
@@ -167,3 +168,4 @@
   </script>
 </body>
 </html>
+
