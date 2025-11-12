@@ -1,48 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perfil - CosNet UY</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background-color: #0e0e10;
-      color: #fff;
-      font-family: "Poppins", sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      text-align: center;
-      background: linear-gradient(90deg, #6c8cff, #9b5cff);
-      padding: 1rem;
-      color: #fff;
-      font-weight: bold;
-    }
-
-    header a {
-      color: #fff;
-      text-decoration: none;
-      margin-left: 20px;
-      font-size: 0.9rem;
-    }
-
     main {
       max-width: 900px;
-      margin: 2rem auto;
-      padding: 1.5rem;
-      background-color: #1a1a1f;
-      border-radius: 16px;
-      box-shadow: 0 0 15px rgba(108, 140, 255, 0.2);
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: left;
     }
 
     .perfil-header {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
     }
 
     .perfil-header img {
@@ -54,39 +30,23 @@
     }
 
     .perfil-datos h2 {
-      margin: 0;
       color: #6c8cff;
-      font-size: 1.8rem;
-    }
-
-    .perfil-datos p {
-      margin: 0.3rem 0;
-    }
-
-    h3 {
-      color: #9b5cff;
-      margin-top: 2rem;
+      margin: 0;
     }
 
     .galeria {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 10px;
-      justify-content: center;
+      margin-top: 20px;
     }
 
     .galeria img {
-      width: 200px;
-      height: 200px;
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
       border-radius: 10px;
       border: 2px solid #6c8cff;
-      object-fit: cover;
-      transition: transform 0.3s;
-    }
-
-    .galeria img:hover {
-      transform: scale(1.05);
     }
 
     .volver {
@@ -100,25 +60,14 @@
     .volver:hover {
       text-decoration: underline;
     }
-
-    footer {
-      text-align: center;
-      margin-top: 3rem;
-      color: #aaa;
-      font-size: 0.8rem;
-    }
-
-    .error {
-      color: #ff4d4d;
-      text-align: center;
-      margin-top: 1rem;
-    }
   </style>
 </head>
 <body>
   <header>
     <h1>CosNet UY</h1>
-    <a href="index.html">← Volver a Perfiles</a>
+    <nav>
+      <a href="index.html">Perfiles</a>
+    </nav>
   </header>
 
   <main>
@@ -139,56 +88,60 @@
     async function cargarPerfil() {
       const contenedor = document.getElementById("perfil");
 
-      try {
-        // 1️⃣ Obtener los perfiles
-        const resPerfiles = await fetch(API_PERFILES);
-        if (!resPerfiles.ok) throw new Error("Error al obtener perfiles");
+      if (!id) {
+        contenedor.innerHTML = "<p style='color:orange;'>⚠ Falta el parámetro 'id' en la URL.</p>";
+        return;
+      }
 
+      try {
+        // --- Cargar perfiles ---
+        const resPerfiles = await fetch(API_PERFILES);
+        if (!resPerfiles.ok) throw new Error("Error al cargar perfiles");
         const perfiles = await resPerfiles.json();
-        const perfil = perfiles.find(p => String(p.id) === String(id));
+
+        // Buscar el perfil por user_id o id
+        const perfil = perfiles.find(p => String(p.user_id || p.id) === String(id));
 
         if (!perfil) {
-          contenedor.innerHTML = `<p class='error'>⚠ Perfil no encontrado.</p>`;
+          contenedor.innerHTML = "<p style='color:orange;'>⚠ Perfil no encontrado.</p>";
           return;
         }
 
-        // 2️⃣ Renderizar datos del perfil
+        // Render del perfil
         contenedor.innerHTML = `
           <div class="perfil-header">
-            <img src="${perfil.banner || 'https://i.imgur.com/HTF5eQe.png'}" alt="${perfil.nombre}">
+            <img src="${perfil.banner || 'https://i.imgur.com/HTF5eQe.png'}" alt="${perfil.nombre || 'Usuario'}">
             <div class="perfil-datos">
-              <h2>${perfil.nombre}</h2>
-              <p><b>Rol:</b> ${perfil.rol || "No especificado"}</p>
-              <p><b>Descripción:</b> ${perfil.descripcion || "Sin descripción"}</p>
-              <p><b>Especialidades:</b> ${
-                Array.isArray(perfil.especialidades)
-                  ? perfil.especialidades.join(", ")
-                  : perfil.especialidades || "No especificadas"
-              }</p>
-              <p><b>Redes:</b> ${perfil.redes || "Sin redes"}</p>
+              <h2>${perfil.nombre || 'Usuario sin nombre'}</h2>
+              <p><b>Rol:</b> ${perfil.rol || "N/A"}</p>
+              <p>${perfil.descripcion || "Sin descripción"}</p>
+              <p><b>Especialidades:</b> ${Array.isArray(perfil.especialidades) ? perfil.especialidades.join(', ') : (perfil.especialidades || "No especificadas")}</p>
+              <p><b>Redes:</b> ${perfil.redes || "No especificadas"}</p>
             </div>
           </div>
 
-          <h3>📸 Portafolio</h3>
+          <h3 style="color:#6c8cff;">📸 Portafolio</h3>
           <div id="galeria" class="galeria"><p>Cargando imágenes...</p></div>
+
+          <a href="index.html" class="volver">⬅ Volver a la lista</a>
         `;
 
-        // 3️⃣ Cargar imágenes del portafolio
+        // --- Cargar imágenes del portafolio ---
         const resPort = await fetch(API_PORTAFOLIO);
-        if (!resPort.ok) throw new Error("Error al obtener portafolio");
-
+        if (!resPort.ok) throw new Error("Error al cargar portafolio");
         const portafolio = await resPort.json();
-        const imgs = portafolio.filter(i => String(i.user_id) === String(id));
+
+        // Filtrar imágenes de este usuario
+        const imgs = portafolio.filter(img => String(img.user_id) === String(id));
 
         const galeria = document.getElementById("galeria");
         galeria.innerHTML = imgs.length
-          ? imgs.map(i => `<img src="${i.url}" alt="Cosplay de ${perfil.nombre}">`).join("")
-          : "<p>No hay imágenes en el portafolio.</p>";
+          ? imgs.map(i => `<img src="${i.imagen_url}" alt="${i.personaje || 'Cosplay'}">`).join("")
+          : "<p>No hay imágenes disponibles para este usuario.</p>";
 
       } catch (err) {
         console.error(err);
-        document.getElementById("perfil").innerHTML =
-          "<p class='error'>❌ Error al cargar el perfil o el portafolio.</p>";
+        contenedor.innerHTML = "<p style='color:red;'>Error al cargar el perfil o el portafolio.</p>";
       }
     }
 
